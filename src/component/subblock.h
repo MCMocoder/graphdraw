@@ -1,9 +1,9 @@
 /**
- * @file process.h
+ * @file subblock.h
  * @author MCMocoder (mcmocoder@ametav.com)
  * @brief
  * @version 0.1
- * @date 2023-05-17
+ * @date 2023-06-07
  *
  * @copyright Copyright (c) 2023 Mocoder Studio
  *
@@ -19,10 +19,10 @@
 
 namespace mocoder {
 
-class ProcessBlock : public Component {
+class SubBlock : public Component {
  public:
-  ProcessBlock(SkFont* _font, hb_font_t* _hb_font, SkCanvas** _canvas, double w,
-               double h, const Box& box)
+  SubBlock(SkFont* _font, hb_font_t* _hb_font, SkCanvas** _canvas, double w,
+           double h, const Box& box)
       : Component(_font, _hb_font, _canvas, w, h, box) {
     ports_ = {Vec2d(0, 0.5), Vec2d(0.5, 0), Vec2d(1, 0.5), Vec2d(0.5, 1)};
   }
@@ -41,9 +41,19 @@ class ProcessBlock : public Component {
         status == Status::ZOOMING || status == Status::EDITING) {
       paint.setColor(SK_ColorBLUE);
       (*canvas)->drawRect(box_.GetEdge(), paint);
+      (*canvas)->drawLine(box_.pos_.x + 15, box_.pos_.y, box_.pos_.x + 15,
+                          box_.pos_.y + box_.size_.y, paint);
+      (*canvas)->drawLine(box_.pos_.x + box_.size_.x - 15, box_.pos_.y,
+                          box_.pos_.x + box_.size_.x - 15,
+                          box_.pos_.y + box_.size_.y, paint);
     } else {
       paint.setColor(SK_ColorBLACK);
       (*canvas)->drawRect(box_.GetEdge(), paint);
+      (*canvas)->drawLine(box_.pos_.x + 15, box_.pos_.y, box_.pos_.x + 15,
+                          box_.pos_.y + box_.size_.y, paint);
+      (*canvas)->drawLine(box_.pos_.x + box_.size_.x - 15, box_.pos_.y,
+                          box_.pos_.x + box_.size_.x - 15,
+                          box_.pos_.y + box_.size_.y, paint);
     }
 
     double textwidth = box_.size_.x - 30;

@@ -11,7 +11,11 @@
 
 #pragma once
 
+#include <cmath>
 #include <cstdlib>
+
+#include "utils/vec3d.h"
+
 
 namespace mocoder {
 
@@ -30,9 +34,10 @@ class Vec2d {
   Vec2d operator/(const double b) { return Vec2d(x / b, y / b); }
   bool operator==(const Vec2d&& b) { return (b.x == x) && (b.y == y); }
   bool operator==(Vec2d& b) { return (b.x == x) && (b.y == y); }
-  Vec2d Abs() {
-    return Vec2d(abs(x),abs(y));
-  }
+  Vec2d Abs() { return Vec2d(abs(x), abs(y)); }
+  double Dist() { return sqrt(x * x + y * y); }
+  double SquareDist() { return x * x + y * y; }
+  Vec3d cross(const Vec2d& b) { return Vec3d(0, 0, x * b.y - y * b.x); };
 };
 
-}
+}  // namespace mocoder

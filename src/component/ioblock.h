@@ -1,9 +1,9 @@
 /**
- * @file process.h
+ * @file ioblock.h
  * @author MCMocoder (mcmocoder@ametav.com)
  * @brief
  * @version 0.1
- * @date 2023-05-17
+ * @date 2023-06-07
  *
  * @copyright Copyright (c) 2023 Mocoder Studio
  *
@@ -11,38 +11,49 @@
 
 #pragma once
 
-#include <optional>
-
 #include "component/component.h"
-#include "include/core/SkColor.h"
-#include "utils/vec2d.h"
+#include "include/effects/SkDashPathEffect.h"
 
 namespace mocoder {
 
-class ProcessBlock : public Component {
+class IOBlock : public Component {
  public:
-  ProcessBlock(SkFont* _font, hb_font_t* _hb_font, SkCanvas** _canvas, double w,
-               double h, const Box& box)
+  IOBlock(SkFont* _font, hb_font_t* _hb_font, SkCanvas** _canvas, double w,
+          double h, const Box& box)
       : Component(_font, _hb_font, _canvas, w, h, box) {
-    ports_ = {Vec2d(0, 0.5), Vec2d(0.5, 0), Vec2d(1, 0.5), Vec2d(0.5, 1)};
+    ports_ = {Vec2d(0.4, 1), Vec2d(0.6, 0), Vec2d(0.1, 0.5), Vec2d(0.9, 0.5)};
   }
 
   virtual void Render(QuadTreeNode* node, double w, double h) override {
     UpdateSize(w, h);
 
-    // RenderPorts(w, h);
-    Box box = box_;
     SkPaint paint;
-
     paint.setStyle(SkPaint::kStroke_Style);
     paint.setAntiAlias(true);
     paint.setStrokeWidth(2);
-    if (status == Status::SELECTED || status == Status::MOVING ||
-        status == Status::ZOOMING || status == Status::EDITING) {
+    if (Selected()) {
       paint.setColor(SK_ColorBLUE);
-      (*canvas)->drawRect(box_.GetEdge(), paint);
     } else {
       paint.setColor(SK_ColorBLACK);
+    }
+
+    (*canvas)->drawLine(box_.pos_.x + box_.size_.x * 0.2, box_.pos_.y,
+                        box_.pos_.x + box_.size_.x, box_.pos_.y, paint);
+
+    (*canvas)->drawLine(box_.pos_.x, box_.pos_.y + box_.size_.y,
+                        box_.pos_.x + box_.size_.x * 0.8,
+                        box_.pos_.y + box_.size_.y, paint);
+
+    (*canvas)->drawLine(box_.pos_.x + box_.size_.x * 0.2, box_.pos_.y,
+                        box_.pos_.x, box_.pos_.y + box_.size_.y, paint);
+
+    (*canvas)->drawLine(box_.pos_.x + box_.size_.x, box_.pos_.y,
+                        box_.pos_.x + box_.size_.x * 0.8,
+                        box_.pos_.y + box_.size_.y, paint);
+
+    if (Selected()) {
+      float interval[] = {10, 20};
+      paint.setPathEffect(SkDashPathEffect::Make(interval, 2, 0.0f));
       (*canvas)->drawRect(box_.GetEdge(), paint);
     }
 
@@ -54,7 +65,11 @@ class ProcessBlock : public Component {
   }
 
   virtual vector<Vec2d> GetLineIntersection(Vec2d p1, Vec2d p2) override {
-    auto points = box_.GetVertex();
+    vector<Vec2d> points = {
+        Vec2d(box_.pos_.x + box_.size_.x * 0.2, box_.pos_.y),
+        Vec2d(box_.pos_.x, box_.pos_.y + box_.size_.y),
+        Vec2d(box_.pos_.x + box_.size_.x * 0.8, box_.pos_.y + box_.size_.y),
+        Vec2d(box_.pos_.x + box_.size_.x, box_.pos_.y)};
     vector<Vec2d> res;
     auto a = GetTwoLineIntersection(p1, p2, points[0], points[1]);
     if (a.has_value()) {

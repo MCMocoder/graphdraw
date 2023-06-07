@@ -180,22 +180,6 @@ class QuadTreeNode {
     return res;
   }
 
-  bool IsCollided(BoxedObj* obj,Box box) {
-    auto t = Retrieve(box);
-    for (auto i = t.begin(); i != t.end();) {
-      if ((*i)==obj) {
-        i=t.erase(i);
-      } else {
-        ++i;
-      }
-    }
-    for (auto& i : t) {
-      if (i->box_.IsCollided(box)) {
-        return true;
-      }
-    }
-    return false;
-  }
 };
 
 }  // namespace mocoder

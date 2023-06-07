@@ -14,67 +14,51 @@
 #include <iostream>
 
 #include "GLFW/glfw3.h"
+#include "component/arrow.h"
 #include "component/manager.h"
 #include "component/process.h"
-#include "render/renderer.h"
+// #include "component/textinput.h"
 #include "utils/quadtree.h"
 #include "utils/vec2d.h"
 
+#define SK_GANESH
+#define SK_GL
+#include "include/core/SkCanvas.h"
+#include "include/core/SkColorSpace.h"
+#include "include/core/SkSurface.h"
+#include "include/gpu/GrBackendSurface.h"
+#include "include/gpu/GrDirectContext.h"
+#include "include/gpu/gl/GrGLInterface.h"
+
 using namespace mocoder;
 
-// ProcessBlock block;
+UIManager mng(1200, 800);
 
-UIManager mng(800, 600);
-
-QuadTreeNode root(Box(Vec2d(-1, -1), Vec2d(2, 2)));
-
-bool leftdown = false;
-
-int width,height;
+int width, height;
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h) {
-  glViewport(0, 0, w, h);
+  // glViewport(0, 0, w, h);
   width = w;
   height = h;
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-  mng.ProcessFrame(w,h);
+  mng.ProcessFrame(w, h);
   glfwSwapBuffers(window);
 }
 
-Vec2d cursorpos;
-
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-  /*xpos = (xpos) / 800 * 2 - 1;
-  ypos = -(ypos) / 600 * 2 + 1;*/
-  // Vec2d(0.005, 0.005) +
   mng.OnCursorEvent(xpos, ypos);
-  /*Vec2d velocity = (Vec2d(xpos, ypos) - cursorpos).Abs();
-  cursorpos = Vec2d(xpos, ypos);
-  // cout << xpos << " " << ypos << endl;
-  auto t = mng.tree_.Retrieve(Box(cursorpos - velocity, velocity * 2));
-  if (t.size() != 0) {
-    for (int i = 0; i < t.size(); ++i) {
-      Component* ti = (Component*)t[i];
-      if (ti->box_.IsCollided(Box(cursorpos - velocity, velocity * 2))) {
-        ti->CursorEvent(&mng.tree_, mng.leftdown, xpos, ypos, velocity * 2);
-      }
-    }
-  }*/
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-  mng.ProcessFrame(width, height);
-  glfwSwapBuffers(window);
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action,
+                  int mode) {
+  mng.OnKeyboardEvent(window, key, action, mode);
 }
 
 void mousebutton_callback(GLFWwindow* window, int button, int action,
                           int other) {
   mng.OnButtonEvent(button, action);
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-  mng.ProcessFrame(width, height);
-  glfwSwapBuffers(window);
 }
+
+void char_callback(GLFWwindow* window, unsigned ch) { mng.OnCharEvent(ch); }
 
 int main(int argc, char** argv) {
   glfwInit();
@@ -83,49 +67,34 @@ int main(int argc, char** argv) {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_SAMPLES, 4);
   // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  GLFWwindow* window = glfwCreateWindow(800, 600, "GraphDraw", NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow(1200, 800, "GraphDraw", NULL, NULL);
   if (window == NULL) {
     std::cout << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
     return -1;
   }
-  glfwMakeContextCurrent(window);
-  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-    std::cout << "Failed to initialize GLAD" << std::endl;
-    return -1;
-  }
-  glEnable(GL_MULTISAMPLE);
-  glfwGetFramebufferSize(window, &width, &height);
 
-  glViewport(0, 0, width, height);
-  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+  glfwMakeContextCurrent(window);
+  glfwGetFramebufferSize(window, &width, &height);
 
   glfwSetCursorPosCallback(window, mouse_callback);
   glfwSetMouseButtonCallback(window, mousebutton_callback);
+  glfwSetKeyCallback(window, key_callback);
+  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+  glfwSetCharCallback(window, char_callback);
 
-  mng.components.push_back(make_shared<ProcessBlock>(
-      ProcessBlock(800, 600, Box(Vec2d(400, 400), Vec2d(100, 150)))));
-  mng.components.push_back(make_shared<ProcessBlock>(
-      ProcessBlock(800, 600, Box(Vec2d(500, 20), Vec2d(100, 100)))));
-
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  mng.ProcessFrame(width, height);
-
-  
-  glfwSwapBuffers(window);
+  mng.InitSkia(1200, 800);
 
   while (!glfwWindowShouldClose(window)) {
-    //glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    //glClear(GL_COLOR_BUFFER_BIT);
+    _sleep(10);
 
-    //mng.ProcessFrame(width,height);
-
-    //glfwSwapBuffers(window);
     glfwPollEvents();
+
+    mng.ProcessFrame(width, height);
+
+    glfwSwapBuffers(window);
   }
+  mng.Close();
   glfwTerminate();
   return 0;
 }

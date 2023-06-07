@@ -1,9 +1,9 @@
 /**
- * @file process.h
+ * @file condblock.h
  * @author MCMocoder (mcmocoder@ametav.com)
  * @brief
  * @version 0.1
- * @date 2023-05-17
+ * @date 2023-06-07
  *
  * @copyright Copyright (c) 2023 Mocoder Studio
  *
@@ -15,16 +15,17 @@
 
 #include "component/component.h"
 #include "include/core/SkColor.h"
+#include "include/effects/SkDashPathEffect.h"
 #include "utils/vec2d.h"
 
 namespace mocoder {
 
-class ProcessBlock : public Component {
+class CondBlock : public Component {
  public:
-  ProcessBlock(SkFont* _font, hb_font_t* _hb_font, SkCanvas** _canvas, double w,
-               double h, const Box& box)
+  CondBlock(SkFont* _font, hb_font_t* _hb_font, SkCanvas** _canvas, double w,
+            double h, const Box& box)
       : Component(_font, _hb_font, _canvas, w, h, box) {
-    ports_ = {Vec2d(0, 0.5), Vec2d(0.5, 0), Vec2d(1, 0.5), Vec2d(0.5, 1)};
+    ports_ = {Vec2d(0, 0.5), Vec2d(0.5, 0), Vec2d(1, 0.5)};
   }
 
   virtual void Render(QuadTreeNode* node, double w, double h) override {
@@ -34,15 +35,35 @@ class ProcessBlock : public Component {
     Box box = box_;
     SkPaint paint;
 
+    Vec2d mid = box.Mid();
+
     paint.setStyle(SkPaint::kStroke_Style);
     paint.setAntiAlias(true);
     paint.setStrokeWidth(2);
     if (status == Status::SELECTED || status == Status::MOVING ||
         status == Status::ZOOMING || status == Status::EDITING) {
       paint.setColor(SK_ColorBLUE);
-      (*canvas)->drawRect(box_.GetEdge(), paint);
+      (*canvas)->drawLine(mid.x, box.pos_.y, box.pos_.x, mid.y, paint);
+      (*canvas)->drawLine(box.pos_.x, mid.y, mid.x, box.pos_.y + box.size_.y,
+                          paint);
+      (*canvas)->drawLine(mid.x, box.pos_.y + box.size_.y,
+                          box.pos_.x + box.size_.x, mid.y, paint);
+      (*canvas)->drawLine(box.pos_.x + box.size_.x, mid.y, mid.x, box.pos_.y,
+                          paint);
     } else {
       paint.setColor(SK_ColorBLACK);
+      (*canvas)->drawLine(mid.x, box.pos_.y, box.pos_.x, mid.y, paint);
+      (*canvas)->drawLine(box.pos_.x, mid.y, mid.x, box.pos_.y + box.size_.y,
+                          paint);
+      (*canvas)->drawLine(mid.x, box.pos_.y + box.size_.y,
+                          box.pos_.x + box.size_.x, mid.y, paint);
+      (*canvas)->drawLine(box.pos_.x + box.size_.x, mid.y, mid.x, box.pos_.y,
+                          paint);
+    }
+
+    if (Selected()) {
+      float interval[] = {10, 20};
+      paint.setPathEffect(SkDashPathEffect::Make(interval, 2, 0.0f));
       (*canvas)->drawRect(box_.GetEdge(), paint);
     }
 
@@ -54,7 +75,12 @@ class ProcessBlock : public Component {
   }
 
   virtual vector<Vec2d> GetLineIntersection(Vec2d p1, Vec2d p2) override {
-    auto points = box_.GetVertex();
+    Box box = box_;
+
+    Vec2d mid = box.Mid();
+    vector<Vec2d> points = {Vec2d(mid.x, box.pos_.y), Vec2d(box.pos_.x, mid.y),
+                            Vec2d(mid.x, box.pos_.y + box.size_.y),
+                            Vec2d(box.pos_.x + box.size_.x, mid.y)};
     vector<Vec2d> res;
     auto a = GetTwoLineIntersection(p1, p2, points[0], points[1]);
     if (a.has_value()) {

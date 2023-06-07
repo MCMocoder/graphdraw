@@ -14,10 +14,19 @@
 #include <iostream>
 #include <vector>
 
-#include "render/renderer.h"
+#include "component/textinput.h"
+#include "harfbuzz/hb.h"
 #include "utils/box.h"
 #include "utils/boxedobj.h"
 #include "utils/quadtree.h"
+
+// GLFW
+#include "GLFW/glfw3.h"
+
+#define SK_GANESH
+#define SK_GL
+#include "include/core/SkCanvas.h"
+#include "include/core/SkPaint.h"
 
 namespace mocoder {
 
@@ -25,8 +34,13 @@ using namespace std;
 
 class Component : public BoxedObj {
  public:
-  Component(double w, double h, const Box& box)
-      : renderer_(w, h), BoxedObj(box) {}
+  Component(SkFont* _font, hb_font_t* _hb_font, SkCanvas** _canvas, double _w,
+            double _h, const Box& box)
+      : text_(_font, _hb_font),
+        canvas(_canvas),
+        width(_w),
+        height(_h),
+        BoxedObj(box) {}
 
   class Port {
    public:
@@ -35,26 +49,28 @@ class Component : public BoxedObj {
   };
 
   vector<Port> ports_;
-  GeometryRenderer renderer_;
+  SkCanvas** canvas;
 
-  enum class Status {
-    UNSELECTED,
-    // PRESELECT,
-    SELECTED,
-    MOVING,
-    ZOOMING,
-    EDITING
-  };
+  TextInput text_;
+
+  enum class Status { UNSELECTED, SELECTED, MOVING, ZOOMING, EDITING };
+
+  enum EditStatus { WAITING, PREEDIT, EDITING };
+  EditStatus editstatus = WAITING;
 
   enum class ZoomStatus { NO, LU, RU, LD, RD };
 
   Status status = Status::UNSELECTED;
   ZoomStatus zstatus = ZoomStatus::NO;
   Vec2d relative_curpos_[4];
+  FrameCounter fc;
+  int prevframe = 0;
 
   int depth_ = 0;
 
-  virtual void Render(double w, double h) = 0;
+  int width = 0, height = 0;
+
+  virtual void Render(QuadTreeNode* node, double w, double h) = 0;
 
   bool Selected() {
     return status == Status::SELECTED || status == Status::MOVING ||
@@ -62,14 +78,16 @@ class Component : public BoxedObj {
   }
 
   virtual void RenderPorts(double w, double h) {
-    renderer_.w = w;
-    renderer_.h = h;
+    return;
     for (auto& i : ports_) {
-      renderer_.AddVertex(
-          Box(i.pos * box_.size_ - Vec2d(2, 2) + box_.pos_, Vec2d(4, 4))
-              .GetVertex());
-      renderer_.Render(0, 0, 0);
+      SkPaint paint;
     }
+  }
+
+  virtual void UpdateSize(double _w, double _h) {
+    width = _w;
+    height = _h;
+    fc.RenderFrame();
   }
 
   Box GetInbox() {
@@ -80,9 +98,8 @@ class Component : public BoxedObj {
   }
 
   bool OutofWindow(Box box) {
-    return !(box.pos_.x > renderer_.w / 10 &&
-             box.pos_.x + box.size_.x < renderer_.w && box_.pos_.y >= 0 &&
-             box.pos_.y + box.size_.y < renderer_.h);
+    return !(box.pos_.x > 100 && box.pos_.x + box.size_.x < width &&
+             box_.pos_.y >= 0 && box.pos_.y + box.size_.y < height);
   }
 
   virtual bool IsCollided(Box box) { return box_.IsCollided(box); }
@@ -246,7 +263,7 @@ class Component : public BoxedObj {
     }
   }
 
-  virtual void ButtonEvent(int button, int type) {
+  virtual void ButtonEvent(QuadTreeNode* node, int button, int type) {
     if (status == Status::UNSELECTED) {
       if (button == 0) {
         if (type == 1) {
@@ -258,10 +275,64 @@ class Component : public BoxedObj {
       if (button == 0 && type == 0) {
         status = Status::SELECTED;
       }
+    } else if (status == Status::ZOOMING) {
+      if (button == 0 && type == 0) {
+        status = Status::SELECTED;
+        zstatus = ZoomStatus::NO;
+      }
+    } else if (status == Status::SELECTED) {
+      if (button == 0 && type == 1) {
+        if (editstatus == WAITING) {
+          editstatus = PREEDIT;
+        }
+      }
+      if (button == 0 && type == 0) {
+        if (editstatus == PREEDIT) {
+          editstatus = EDITING;
+          text_.status_ = TextInput::EDIT;
+        }
+      }
     }
   }
 
-  void Unselect() { status = Status::UNSELECTED; }
+  virtual int OnKeyboard(GLFWwindow* window, int key, int action,
+                         int modifier) {
+    if (status == Status::SELECTED) {
+      if (text_.status_ != TextInput::EDIT) {
+        if ((key == GLFW_KEY_DELETE || key == GLFW_KEY_BACKSPACE) &&
+            action == GLFW_PRESS) {
+          return -1;
+        }
+      } else {
+        if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
+          editstatus = WAITING;
+          text_.status_ = TextInput::SHOW;
+        } else {
+          text_.OnKeyboard(window, key, action, modifier);
+          return -2;
+        }
+      }
+    }
+    return 0;
+  }
+
+  virtual vector<Vec2d> GetLineIntersection(Vec2d p1, Vec2d p2) = 0;
+
+  void Unselect() {
+    status = Status::UNSELECTED;
+    text_.status_ = TextInput::SHOW;
+    editstatus = WAITING;
+  }
+
+  virtual bool IsArrow() { return false; }
+
+  virtual void OnCharEvent(unsigned codepoint) {
+    if (editstatus == EDITING) {
+      text_.OnChar(codepoint);
+    }
+  }
+
+ protected:
 };
 
 }  // namespace mocoder

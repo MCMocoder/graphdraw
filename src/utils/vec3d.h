@@ -25,8 +25,8 @@ class Vec3d {
   Vec3d operator*(const Vec3d& b) { return Vec3d(x * b.x, y * b.y,z*b.z); }
   Vec3d operator/(const Vec3d& b) { return Vec3d(x / b.x, y / b.y,z/b.z); }
   Vec3d operator/(const double b) { return Vec3d(x / b, y / b, z / b); }
-  Vec3d operator%(const Vec3d& b){
-    return Vec3d(y * b.z - z - b.y, -x * b.z + z * b.x, x * b.z - z * b.x);
+  Vec3d cross(const Vec3d& b){
+    return Vec3d(y * b.z - z * b.y, -x * b.z + z * b.x, x * b.y - y * b.x);
   };
 };
 

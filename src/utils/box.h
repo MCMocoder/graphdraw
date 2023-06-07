@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "include/core/SkRect.h"
 #include "utils/vec2d.h"
 
 namespace mocoder {
@@ -23,7 +24,7 @@ class Box {
  public:
   Vec2d pos_;
   Vec2d size_;
-  Box(const Box &box):pos_(box.pos_),size_(box.size_){}
+  Box(const Box& box) : pos_(box.pos_), size_(box.size_) {}
   Box(Vec2d pos, Vec2d size) : pos_(pos), size_(size) {}
   Box() : pos_(0, 0), size_(0, 0) {}
   bool IsCollided(Box b) {
@@ -36,9 +37,11 @@ class Box {
             Vec2d(pos_.x + size_.x, pos_.y + size_.y),
             Vec2d(pos_.x + size_.x, pos_.y)};
   }
-
-  bool operator==(Box& b) {
-    return pos_==b.pos_&&size_==b.size_;
+  bool operator==(Box& b) { return pos_ == b.pos_ && size_ == b.size_; }
+  Vec2d Mid() { return pos_ + size_ / 2; }
+  SkRect GetEdge() {
+    return SkRect({(float)pos_.x, (float)pos_.y, (float)pos_.x + (float)size_.x,
+                   (float)pos_.y + (float)size_.y});
   }
 };
 
