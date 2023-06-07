@@ -135,15 +135,14 @@ class UIManager {
         Arrow* arrow = (Arrow*)i->get();
         if (arrow->start_ == c || arrow->end_ == c) {
           i = components.erase(i);
-        } else {
-          ++i;
+          continue;
         }
       }
       if (i->get() == c) {
         i = components.erase(i);
-      } else {
-        ++i;
+        continue;
       }
+      ++i;
     }
     UpdateDepth();
   }
