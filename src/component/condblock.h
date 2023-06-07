@@ -11,9 +11,12 @@
 
 #pragma once
 
+#include <unicode/rep.h>
+
 #include <optional>
 
 #include "component/component.h"
+#include "component/textinput.h"
 #include "include/core/SkColor.h"
 #include "include/effects/SkDashPathEffect.h"
 #include "utils/vec2d.h"
@@ -24,9 +27,17 @@ class CondBlock : public Component {
  public:
   CondBlock(SkFont* _font, hb_font_t* _hb_font, SkCanvas** _canvas, double w,
             double h, const Box& box)
-      : Component(_font, _hb_font, _canvas, w, h, box) {
+      : left(_font, _hb_font),
+        right(_font, _hb_font),
+        Component(_font, _hb_font, _canvas, w, h, box) {
     ports_ = {Vec2d(0, 0.5), Vec2d(0.5, 0), Vec2d(1, 0.5)};
+    left.ustr_ = UnicodeString::fromUTF8("真");
+    right.ustr_ = UnicodeString::fromUTF8("假");
+    left.allow_focus = false;
+    right.allow_focus = false;
   }
+
+  TextInput left, right;
 
   virtual void Render(QuadTreeNode* node, double w, double h) override {
     UpdateSize(w, h);
@@ -70,8 +81,13 @@ class CondBlock : public Component {
     double textwidth = box_.size_.x - 30;
     double textheight = box_.size_.y - 30;
     Vec2d center = box_.Mid();
-    text_.RerenderText(canvas, center - Vec2d(textwidth, textheight) / 2.0,box_.Mid(),
-                       textwidth, textheight);
+    text_.RerenderText(canvas, center - Vec2d(textwidth, textheight) / 2.0,
+                       box_.Mid(), textwidth, textheight);
+    left.RerenderText(canvas, box.Mid(),
+                      Vec2d(box_.pos_.x, mid.y) - Vec2d(16, 0), 16, 16);
+    right.RerenderText(canvas, box.Mid(),
+                       Vec2d(box_.pos_.x + box_.size_.x, mid.y) + Vec2d(16, 0),
+                       16, 16);
   }
 
   virtual vector<Vec2d> GetLineIntersection(Vec2d p1, Vec2d p2) override {

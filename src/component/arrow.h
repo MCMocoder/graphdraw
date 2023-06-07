@@ -12,11 +12,14 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <ostream>
 #include <set>
 
 #include "component/component.h"
 #include "include/core/SkColor.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPath.h"
 
 namespace mocoder {
 
@@ -187,9 +190,59 @@ class Arrow : public Component {
           status == Status::ZOOMING || status == Status::EDITING) {
         paint.setColor(SK_ColorBLUE);
         (*canvas)->drawLine(midstart.x, midstart.y, midend.x, midend.y, paint);
+        if (!end_under) {
+          paint.setStyle(SkPaint::kFill_Style);
+          double dx = midend.x - midstart.x, dy = midend.y - midstart.y;
+          double theta = atan(dy / dx);
+          double angle1 = theta + 3.14159 / 6.0;
+          double angle2 = theta - 3.14159 / 6.0;
+          double p1x, p1y, p2x, p2y;
+          if (dx >= 0) {
+            p1x = midend.x - 8.0 * cos(angle1);
+            p1y = midend.y - 8.0 * sin(angle1);
+            p2x = midend.x - 8.0 * cos(angle2);
+            p2y = midend.y - 8.0 * sin(angle2);
+          } else {
+            p1x = midend.x + 8.0 * cos(angle1);
+            p1y = midend.y + 8.0 * sin(angle1);
+            p2x = midend.x + 8.0 * cos(angle2);
+            p2y = midend.y + 8.0 * sin(angle2);
+          }
+          SkPath path;
+          path.moveTo(midend.x, midend.y);
+          path.lineTo(p1x, p1y);
+          path.lineTo(p2x, p2y);
+          path.close();
+          (*canvas)->drawPath(path, paint);
+        }
       } else {
         paint.setColor(SK_ColorBLACK);
         (*canvas)->drawLine(midstart.x, midstart.y, midend.x, midend.y, paint);
+        if (!end_under) {
+          paint.setStyle(SkPaint::kFill_Style);
+          double dx = midend.x - midstart.x, dy = midend.y - midstart.y;
+          double theta = atan(dy / dx);
+          double angle1 = theta + 3.14159 / 6.0;
+          double angle2 = theta - 3.14159 / 6.0;
+          double p1x, p1y, p2x, p2y;
+          if (dx >= 0) {
+            p1x = midend.x - 8.0 * cos(angle1);
+            p1y = midend.y - 8.0 * sin(angle1);
+            p2x = midend.x - 8.0 * cos(angle2);
+            p2y = midend.y - 8.0 * sin(angle2);
+          } else {
+            p1x = midend.x + 8.0 * cos(angle1);
+            p1y = midend.y + 8.0 * sin(angle1);
+            p2x = midend.x + 8.0 * cos(angle2);
+            p2y = midend.y + 8.0 * sin(angle2);
+          }
+          SkPath path;
+          path.moveTo(midend.x, midend.y);
+          path.lineTo(p1x, p1y);
+          path.lineTo(p2x, p2y);
+          path.close();
+          (*canvas)->drawPath(path, paint);
+        }
       }
     } else if (astatus_ == DRAWING) {
       SkPaint paint;
@@ -198,6 +251,29 @@ class Arrow : public Component {
       paint.setStrokeWidth(2);
       paint.setColor(SK_ColorBLUE);
       (*canvas)->drawLine(pos1.x, pos1.y, pos2.x, pos2.y, paint);
+      paint.setStyle(SkPaint::kFill_Style);
+      double dx = pos2.x - pos1.x, dy = pos2.y - pos1.y;
+      double theta = atan(dy / dx);
+      double angle1 = theta + 3.14159 / 6.0;
+      double angle2 = theta - 3.14159 / 6.0;
+      double p1x, p2x, p1y, p2y;
+      if (dx >= 0) {
+        p1x = pos2.x - 8.0 * cos(angle1);
+        p1y = pos2.y - 8.0 * sin(angle1);
+        p2x = pos2.x - 8.0 * cos(angle2);
+        p2y = pos2.y - 8.0 * sin(angle2);
+      } else {
+        p1x = pos2.x + 8.0 * cos(angle1);
+        p1y = pos2.y + 8.0 * sin(angle1);
+        p2x = pos2.x + 8.0 * cos(angle2);
+        p2y = pos2.y + 8.0 * sin(angle2);
+      }
+      SkPath path;
+      path.moveTo(pos2.x, pos2.y);
+      path.lineTo(p1x, p1y);
+      path.lineTo(p2x, p2y);
+      path.close();
+      (*canvas)->drawPath(path, paint);
     }
   }
 
