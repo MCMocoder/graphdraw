@@ -302,6 +302,24 @@ class Component : public BoxedObj {
         if ((key == GLFW_KEY_DELETE || key == GLFW_KEY_BACKSPACE) &&
             action == GLFW_PRESS) {
           return -1;
+        } else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+          if (key == GLFW_KEY_UP) {
+            if (!OutofWindow(Box(box_.pos_ - Vec2d(0, 10), box_.size_))) {
+              box_.pos_.y -= 10;
+            }
+          } else if (key == GLFW_KEY_DOWN) {
+            if (!OutofWindow(Box(box_.pos_ + Vec2d(0, 10), box_.size_))) {
+              box_.pos_.y += 10;
+            }
+          } else if (key == GLFW_KEY_LEFT) {
+            if (!OutofWindow(Box(box_.pos_ - Vec2d(10, 0), box_.size_))) {
+              box_.pos_.x -= 10;
+            }
+          } else if (key == GLFW_KEY_RIGHT) {
+            if (!OutofWindow(Box(box_.pos_ + Vec2d(10, 0), box_.size_))) {
+              box_.pos_.x += 10;
+            }
+          }
         }
       } else {
         if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
